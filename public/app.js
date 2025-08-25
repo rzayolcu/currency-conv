@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         labels: labels,
         datasets: [
           {
-            label: `${fromCurrency} / ${toCurrency}`,
+            label: `${toCurrency} / ${fromCurrency}`,
             data: data,
             borderColor: "rgba(75, 192, 192, 1)",
             backgroundColor: "rgba(75, 192, 192, 0.2)",
