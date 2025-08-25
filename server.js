@@ -2,14 +2,26 @@ import express from "express";
 import fetch from "node-fetch";
 import cors from "cors";
 import { parseStringPromise } from "xml2js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// __dirname ayarı (ES Module)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
 
+// Port ayarı (Render için)
+const PORT = process.env.PORT || 3000;
+
+// Frontend dosyalarını servis et
+app.use(express.static(path.join(__dirname, "public")));
+
 const TCMB_TODAY = "https://www.tcmb.gov.tr/kurlar/today.xml";
 
+// Yardımcı fonksiyonlar
 function formatDate(date) {
-  // yyyyMM, ddMMMyyyy format
   const yyyy = date.getFullYear();
   const MM = (date.getMonth() + 1).toString().padStart(2, "0");
   const dd = date.getDate().toString().padStart(2, "0");
@@ -37,6 +49,7 @@ function getRateFromCurrencies(currencies, code) {
   return parseFloat(rateStr.replace(",", "."));
 }
 
+// API: Güncel kurlar
 app.get("/rates", async (req, res) => {
   try {
     const currencies = await fetchRatesFromXML(TCMB_TODAY);
@@ -55,33 +68,23 @@ app.get("/rates", async (req, res) => {
   }
 });
 
+// API: Tarihsel kurlar
 app.get("/history", async (req, res) => {
-  const {
-    baseCurrency = "TRY",
-    targetCurrency = "USD",
-    range = "1D",
-  } = req.query;
+  const { baseCurrency = "TRY", targetCurrency = "USD", range = "1D" } =
+    req.query;
 
-  // Aynı para birimi ise direkt 1 döndür
   if (baseCurrency === targetCurrency) {
     const now = new Date();
     const history = [];
 
     if (range === "1D") {
-      // Saatlik 1 değerleri döndür
       for (let i = 24; i >= 0; i--) {
         const date = new Date(now);
         date.setHours(now.getHours() - i);
         history.push({ date: date.toISOString(), rate: 1 });
       }
     } else {
-      // Günlük 1 değerleri döndür
-      const daysMap = {
-        "1W": 7,
-        "1M": 30,
-        "1Y": 365,
-      };
-
+      const daysMap = { "1W": 7, "1M": 30, "1Y": 365 };
       const days = daysMap[range];
       if (!days) return res.status(400).json({ error: "Desteklenmeyen range" });
 
@@ -94,12 +97,9 @@ app.get("/history", async (req, res) => {
     return res.json(history);
   }
 
-  
   if (range === "1D") {
     try {
-      // Bugünkü kurları çek
       const currencies = await fetchRatesFromXML(TCMB_TODAY);
-
       const baseRate = getRateFromCurrencies(currencies, baseCurrency);
       const targetRate = getRateFromCurrencies(currencies, targetCurrency);
 
@@ -113,7 +113,6 @@ app.get("/history", async (req, res) => {
         const date = new Date(now);
         date.setHours(now.getHours() - i);
 
-        
         const fluctuation = (Math.random() - 0.5) * 0.02;
         const rate = ((targetRate / baseRate) * (1 + fluctuation)).toFixed(4);
 
@@ -127,27 +126,18 @@ app.get("/history", async (req, res) => {
     }
   }
 
-  // Diğer aralıklar için gerçek günlük veriler:
   try {
-    const daysMap = {
-      "1W": 7,
-      "1M": 30,
-      "1Y": 365,
-      
-    };
-
+    const daysMap = { "1W": 7, "1M": 30, "1Y": 365 };
     const days = daysMap[range];
     if (!days) return res.status(400).json({ error: "Desteklenmeyen range" });
 
     const today = new Date();
     const history = [];
 
-    // Her gün için TCMB tarih bazlı XML URL'si oluştur ve çek
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
       const { yyyyMM, ddMMMyyyy } = formatDate(date);
-
       const url = `https://www.tcmb.gov.tr/kurlar/${yyyyMM}/${ddMMMyyyy}.xml`;
 
       try {
@@ -162,7 +152,6 @@ app.get("/history", async (req, res) => {
           rate: parseFloat((targetRate / baseRate).toFixed(4)),
         });
       } catch {
-        // Eğer o günün verisi yoksa atla 
         continue;
       }
     }
@@ -174,14 +163,10 @@ app.get("/history", async (req, res) => {
   }
 });
 
-app.get("/history", async (req, res) => {
-  console.log("Query Params:", req.query);
-  const {
-    baseCurrency = "TRY",
-    targetCurrency = "USD",
-    range = "1D",
-  } = req.query;
-  console.log(baseCurrency, targetCurrency, range);
+// Tüm diğer route’lar frontend’e yönlendir
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.listen(3000, () => console.log("Server çalışıyor http://localhost:3000"));
+// Server başlat
+app.listen(PORT, () => console.log(`Server çalışıyor http://localhost:${PORT}`));
