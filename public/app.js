@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function fetchCurrencyHistory(baseCurrency, targetCurrency, range) {
     try {
       const res = await fetch(
-        `http://localhost:3000/history?baseCurrency=${baseCurrency}&targetCurrency=${targetCurrency}&range=${range}`
+        `http://currency-conv-1.onrender.com/history?baseCurrency=${baseCurrency}&targetCurrency=${targetCurrency}&range=${range}`
       );
       if (!res.ok) {
         const errorData = await res.json();
