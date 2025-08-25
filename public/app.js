@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Backend’den güncel kurları çek
   async function fetchRates() {
     try {
-      const res = await fetch("https://currency-conv-1.onrender.com/rates");
+      const res = await fetch("/rates");
       if (!res.ok) throw new Error("Veri çekilemedi");
       const data = await res.json();
       Object.assign(rates, data);
@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function fetchCurrencyHistory(baseCurrency, targetCurrency, range) {
     try {
       const res = await fetch(
-        `http://currency-conv-1.onrender.com/history?baseCurrency=${baseCurrency}&targetCurrency=${targetCurrency}&range=${range}`
+        `/history?baseCurrency=${baseCurrency}&targetCurrency=${targetCurrency}&range=${range}`
       );
       if (!res.ok) {
         const errorData = await res.json();
