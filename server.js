@@ -69,8 +69,11 @@ app.get("/rates", async (req, res) => {
 
 // API: Tarihsel kurlar
 app.get("/history", async (req, res) => {
-  const { baseCurrency = "TRY", targetCurrency = "USD", range = "1D" } =
-    req.query;
+  const {
+    baseCurrency = "TRY",
+    targetCurrency = "USD",
+    range = "1D",
+  } = req.query;
 
   if (baseCurrency === targetCurrency) {
     const now = new Date();
@@ -163,9 +166,11 @@ app.get("/history", async (req, res) => {
 });
 
 // Tüm diğer route’lar frontend’e yönlendir (path-to-regexp hatasını engeller)
-app.get(/^(?!\/rates|\/history).*$/, (req, res) => {
+app.get(/^\/(?!rates|history).*$/, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // Server başlat
-app.listen(PORT, () => console.log(`Server çalışıyor http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Server çalışıyor http://localhost:${PORT}`)
+);
