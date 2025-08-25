@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Backend’den güncel kurları çek
   async function fetchRates() {
     try {
-      const res = await fetch("http://localhost:3000/rates");
+      const res = await fetch("https://currency-conv-1.onrender.com/rates");
       if (!res.ok) throw new Error("Veri çekilemedi");
       const data = await res.json();
       Object.assign(rates, data);
@@ -128,8 +128,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             borderColor: "rgba(75, 192, 192, 1)",
             backgroundColor: "rgba(75, 192, 192, 0.2)",
             tension: 0.3,
-            pointRadius: 0, 
-            pointHoverRadius: 0, 
+            pointRadius: 0,
+            pointHoverRadius: 0,
           },
         ],
       },
