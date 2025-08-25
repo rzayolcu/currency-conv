@@ -5,14 +5,13 @@ import { parseStringPromise } from "xml2js";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// __dirname ayarı (ES Module)
+// ES Module __dirname ayarı
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
 
-// Port ayarı (Render için)
 const PORT = process.env.PORT || 3000;
 
 // Frontend dosyalarını servis et
@@ -163,8 +162,8 @@ app.get("/history", async (req, res) => {
   }
 });
 
-// Tüm diğer route’lar frontend’e yönlendir
-app.get("*", (req, res) => {
+// Tüm diğer route’lar frontend’e yönlendir (path-to-regexp hatasını engeller)
+app.get(/^(?!\/rates|\/history).*$/, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
