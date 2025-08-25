@@ -1,0 +1,187 @@
+import express from "express";
+import fetch from "node-fetch";
+import cors from "cors";
+import { parseStringPromise } from "xml2js";
+
+const app = express();
+app.use(cors());
+
+const TCMB_TODAY = "https://www.tcmb.gov.tr/kurlar/today.xml";
+
+function formatDate(date) {
+  // yyyyMM, ddMMMyyyy format
+  const yyyy = date.getFullYear();
+  const MM = (date.getMonth() + 1).toString().padStart(2, "0");
+  const dd = date.getDate().toString().padStart(2, "0");
+
+  return {
+    yyyyMM: `${yyyy}${MM}`,
+    ddMMMyyyy: `${dd}${MM}${yyyy}`,
+  };
+}
+
+async function fetchRatesFromXML(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("XML fetch error");
+  const xml = await res.text();
+  const parsed = await parseStringPromise(xml);
+  return parsed.Tarih_Date.Currency;
+}
+
+function getRateFromCurrencies(currencies, code) {
+  if (code === "TRY") return 1;
+  const cur = currencies.find((c) => c.$.CurrencyCode === code);
+  if (!cur) return null;
+  const rateStr = cur.ForexSelling?.[0] || cur.BanknoteSelling?.[0];
+  if (!rateStr) return null;
+  return parseFloat(rateStr.replace(",", "."));
+}
+
+app.get("/rates", async (req, res) => {
+  try {
+    const currencies = await fetchRatesFromXML(TCMB_TODAY);
+    const rates = { TRY: 1 };
+
+    for (const cur of currencies) {
+      const code = cur.$.CurrencyCode;
+      const rateStr = cur.ForexSelling?.[0] || cur.BanknoteSelling?.[0];
+      if (!rateStr) continue;
+      rates[code] = parseFloat(rateStr.replace(",", "."));
+    }
+    res.json(rates);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Kurlar alınamadı" });
+  }
+});
+
+app.get("/history", async (req, res) => {
+  const {
+    baseCurrency = "TRY",
+    targetCurrency = "USD",
+    range = "1D",
+  } = req.query;
+
+  // Aynı para birimi ise direkt 1 döndür
+  if (baseCurrency === targetCurrency) {
+    const now = new Date();
+    const history = [];
+
+    if (range === "1D") {
+      // Saatlik 1 değerleri döndür
+      for (let i = 24; i >= 0; i--) {
+        const date = new Date(now);
+        date.setHours(now.getHours() - i);
+        history.push({ date: date.toISOString(), rate: 1 });
+      }
+    } else {
+      // Günlük 1 değerleri döndür
+      const daysMap = {
+        "1W": 7,
+        "1M": 30,
+        "1Y": 365,
+      };
+
+      const days = daysMap[range];
+      if (!days) return res.status(400).json({ error: "Desteklenmeyen range" });
+
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(now.getDate() - i);
+        history.push({ date: date.toISOString(), rate: 1 });
+      }
+    }
+    return res.json(history);
+  }
+
+  
+  if (range === "1D") {
+    try {
+      // Bugünkü kurları çek
+      const currencies = await fetchRatesFromXML(TCMB_TODAY);
+
+      const baseRate = getRateFromCurrencies(currencies, baseCurrency);
+      const targetRate = getRateFromCurrencies(currencies, targetCurrency);
+
+      if (baseRate == null || targetRate == null)
+        return res.status(400).json({ error: "Geçersiz para birimi" });
+
+      const now = new Date();
+      const history = [];
+
+      for (let i = 24; i >= 0; i--) {
+        const date = new Date(now);
+        date.setHours(now.getHours() - i);
+
+        
+        const fluctuation = (Math.random() - 0.5) * 0.02;
+        const rate = ((targetRate / baseRate) * (1 + fluctuation)).toFixed(4);
+
+        history.push({ date: date.toISOString(), rate: parseFloat(rate) });
+      }
+
+      return res.json(history);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "1D geçmiş veriler alınamadı." });
+    }
+  }
+
+  // Diğer aralıklar için gerçek günlük veriler:
+  try {
+    const daysMap = {
+      "1W": 7,
+      "1M": 30,
+      "1Y": 365,
+      
+    };
+
+    const days = daysMap[range];
+    if (!days) return res.status(400).json({ error: "Desteklenmeyen range" });
+
+    const today = new Date();
+    const history = [];
+
+    // Her gün için TCMB tarih bazlı XML URL'si oluştur ve çek
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const { yyyyMM, ddMMMyyyy } = formatDate(date);
+
+      const url = `https://www.tcmb.gov.tr/kurlar/${yyyyMM}/${ddMMMyyyy}.xml`;
+
+      try {
+        const currencies = await fetchRatesFromXML(url);
+        const baseRate = getRateFromCurrencies(currencies, baseCurrency);
+        const targetRate = getRateFromCurrencies(currencies, targetCurrency);
+
+        if (baseRate == null || targetRate == null) continue;
+
+        history.push({
+          date: date.toISOString(),
+          rate: parseFloat((targetRate / baseRate).toFixed(4)),
+        });
+      } catch {
+        // Eğer o günün verisi yoksa atla 
+        continue;
+      }
+    }
+
+    return res.json(history);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Geçmiş veriler alınamadı." });
+  }
+});
+
+app.get("/history", async (req, res) => {
+  console.log("Query Params:", req.query);
+  const {
+    baseCurrency = "TRY",
+    targetCurrency = "USD",
+    range = "1D",
+  } = req.query;
+  console.log(baseCurrency, targetCurrency, range);
+});
+
+app.listen(3000, () => console.log("Server çalışıyor http://localhost:3000"));
