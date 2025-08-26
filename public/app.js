@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", async () => {
   // Elementler
   const amountEl = document.getElementById("amount");
@@ -65,45 +64,52 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   convertBtn.addEventListener("click", convert);
 
-  
   async function fetchCurrencyHistory(baseCurrency, targetCurrency, range) {
-  try {
-    const res = await fetch(`/history?baseCurrency=${baseCurrency}&targetCurrency=${targetCurrency}&range=${range}`);
-    if (!res.ok) throw new Error("Geçmiş veri alınamadı");
-    const data = await res.json();
-    return data.map((item) => ({
-      date: item.date,
-      rate: item.rate,
-    }));
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
-}
-
-  // Grafik oluşturma fonksiyonu 
-  function createChart(fromCurrency, toCurrency, ratesHistory, range) {
-  if (fromCurrency === toCurrency) {
-    ratesHistory = ratesHistory.map((item) => ({ date: item.date, rate: 1 }));
-  }
-
-  const labels = ratesHistory.map((item) => {
-    const d = new Date(item.date);
-    switch (range) {
-      case "1D": {
-        const hours = d.getHours().toString().padStart(2, "0");
-        const minutes = d.getMinutes().toString().padStart(2, "0");
-        return `${hours}:${minutes}`; // Saat:dk formatı
-      }
-      case "1W":
-      case "1M":
-        return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
-      case "1Y":
-        return d.toLocaleDateString("tr-TR", { month: "short", year: "numeric" });
-      default:
-        return d.toLocaleDateString();
+    try {
+      const res = await fetch(
+        `/history?baseCurrency=${baseCurrency}&targetCurrency=${targetCurrency}&range=${range}`
+      );
+      if (!res.ok) throw new Error("Geçmiş veri alınamadı");
+      const data = await res.json();
+      return data.map((item) => ({
+        date: item.date,
+        rate: item.rate,
+      }));
+    } catch (err) {
+      console.error(err);
+      return [];
     }
-  });
+  }
+
+  // Grafik oluşturma fonksiyonu
+  function createChart(fromCurrency, toCurrency, ratesHistory, range) {
+    if (fromCurrency === toCurrency) {
+      ratesHistory = ratesHistory.map((item) => ({ date: item.date, rate: 1 }));
+    }
+
+    const labels = ratesHistory.map((item) => {
+      const d = new Date(item.date);
+      switch (range) {
+        case "1D": {
+          const hours = d.getHours().toString().padStart(2, "0");
+          const minutes = d.getMinutes().toString().padStart(2, "0");
+          return `${hours}:${minutes}`; // Saat:dk formatı
+        }
+        case "1W":
+        case "1M":
+          return d.toLocaleDateString("tr-TR", {
+            day: "2-digit",
+            month: "short",
+          });
+        case "1Y":
+          return d.toLocaleDateString("tr-TR", {
+            month: "short",
+            year: "numeric",
+          });
+        default:
+          return d.toLocaleDateString();
+      }
+    });
 
     const data = ratesHistory.map((item) => item.rate);
 
@@ -111,7 +117,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     currencyChart = new Chart(ctx, {
       type: "line",
-      data: { labels, datasets: [{ label: `${toCurrency} / ${fromCurrency}`, data, borderColor: "rgba(75,192,192,1)", backgroundColor: "rgba(75,192,192,0.2)", tension: 0.3, pointRadius: 0, pointHoverRadius: 0 }] },
+      data: {
+        labels,
+        datasets: [
+          {
+            label: `${toCurrency} / ${fromCurrency}`,
+            data,
+            borderColor: "rgba(75,192,192,1)",
+            backgroundColor: "rgba(75,192,192,0.2)",
+            tension: 0.3,
+            pointRadius: 0,
+            pointHoverRadius: 0,
+          },
+        ],
+      },
       options: {
         responsive: true,
         interaction: { mode: "index", intersect: false },
@@ -122,12 +141,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             mode: "index",
             intersect: false,
             callbacks: {
-              label: (context) => `${context.dataset.label}: ${parseFloat(context.raw).toFixed(4)}`,
+              label: (context) =>
+                `${context.dataset.label}: ${parseFloat(context.raw).toFixed(
+                  4
+                )}`,
             },
           },
           decimation: { enabled: true, algorithm: "lttb", samples: 100 },
         },
-        scales: { y: { beginAtZero: false, ticks: { callback: (value) => value.toFixed(4) } } },
+        scales: {
+          y: {
+            beginAtZero: false,
+            min: Math.min(...data) * 0.999,
+            max: Math.max(...data) * 1.001,
+            ticks: { callback: (value) => value.toFixed(4) },
+          },
+        },
       },
     });
   }
@@ -135,25 +164,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Time range butonları ve dropdown eventleri (değişmedi)
   timeButtons.forEach((btn) => {
     btn.addEventListener("click", async () => {
-      document.querySelector(".time-range-controls .active")?.classList.remove("active");
+      document
+        .querySelector(".time-range-controls .active")
+        ?.classList.remove("active");
       btn.classList.add("active");
 
       const range = btn.dataset.range;
       const fromCurrency = fromCurrencyEl.value;
       const toCurrency = toCurrencyEl.value;
       chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
-      const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
+      const history = await fetchCurrencyHistory(
+        toCurrency,
+        fromCurrency,
+        range
+      );
       createChart(toCurrency, fromCurrency, history, range);
     });
   });
 
   [toCurrencyEl, fromCurrencyEl].forEach((el) =>
     el.addEventListener("change", async () => {
-      const range = document.querySelector(".time-range-controls .active")?.dataset.range || "1Y";
+      const range =
+        document.querySelector(".time-range-controls .active")?.dataset.range ||
+        "1Y";
       const fromCurrency = fromCurrencyEl.value;
       const toCurrency = toCurrencyEl.value;
       chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
-      const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
+      const history = await fetchCurrencyHistory(
+        toCurrency,
+        fromCurrency,
+        range
+      );
       createChart(toCurrency, fromCurrency, history, range);
     })
   );
@@ -163,8 +204,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const initialFrom = fromCurrencyEl.value;
   const initialTo = toCurrencyEl.value;
-  const initialRange = document.querySelector(".time-range-controls .active")?.dataset.range || "1W";
+  const initialRange =
+    document.querySelector(".time-range-controls .active")?.dataset.range ||
+    "1W";
   chartTitle.textContent = `${initialFrom} / ${initialTo} Grafiği (${initialRange})`;
-  const initialHistory = await fetchCurrencyHistory(initialFrom, initialTo, initialRange);
+  const initialHistory = await fetchCurrencyHistory(
+    initialFrom,
+    initialTo,
+    initialRange
+  );
   createChart(initialFrom, initialTo, initialHistory, initialRange);
 });
