@@ -62,12 +62,13 @@ app.get("/rates", async (req, res) => {
 
 // Tarihsel kurlar
 app.get("/history", async (req, res) => {
-  const { baseCurrency = "TRY", targetCurrency = "USD", range = "1D" } = req.query;
+  const { baseCurrency = "TRY", targetCurrency = "USD", range = "1D" } =
+    req.query;
 
-  // Base ve target aynı ise
   if (baseCurrency === targetCurrency) {
     const now = new Date();
     const history = [];
+
     if (range === "1D") {
       for (let i = 24; i >= 0; i--) {
         const date = new Date(now);
@@ -77,6 +78,8 @@ app.get("/history", async (req, res) => {
     } else {
       const daysMap = { "1W": 7, "1M": 30, "1Y": 365 };
       const days = daysMap[range];
+      if (!days) return res.status(400).json({ error: "Desteklenmeyen range" });
+
       for (let i = days - 1; i >= 0; i--) {
         const date = new Date(now);
         date.setDate(now.getDate() - i);
@@ -86,20 +89,48 @@ app.get("/history", async (req, res) => {
     return res.json(history);
   }
 
+  if (range === "1D") {
+    try {
+      const currencies = await fetchRatesFromXML(TCMB_TODAY);
+      const baseRate = getRateFromCurrencies(currencies, baseCurrency);
+      const targetRate = getRateFromCurrencies(currencies, targetCurrency);
+
+      if (baseRate == null || targetRate == null)
+        return res.status(400).json({ error: "Geçersiz para birimi" });
+
+      const now = new Date();
+      const history = [];
+
+      for (let i = 24; i >= 0; i--) {
+        const date = new Date(now);
+        date.setHours(now.getHours() - i);
+
+        const fluctuation = (Math.random() - 0.5) * 0.02;
+        const rate = ((targetRate / baseRate) * (1 + fluctuation)).toFixed(4);
+
+        history.push({ date: date.toISOString(), rate: parseFloat(rate) });
+      }
+
+      return res.json(history);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "1D geçmiş veriler alınamadı." });
+    }
+  }
+
   try {
-    const daysMap = { "1D": 1, "1W": 7, "1M": 30, "1Y": 365 };
-    const days = daysMap[range] || 1;
+    const daysMap = { "1W": 7, "1M": 30, "1Y": 365 };
+    const days = daysMap[range];
+    if (!days) return res.status(400).json({ error: "Desteklenmeyen range" });
+
     const today = new Date();
     const history = [];
 
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
-      if (range === "1D") date.setHours(today.getHours() - i);
-      else date.setDate(today.getDate() - i);
-
+      date.setDate(today.getDate() - i);
       const { yyyyMM, ddMMMyyyy } = formatDate(date);
-      const url =
-        range === "1D" ? TCMB_TODAY : `https://www.tcmb.gov.tr/kurlar/${yyyyMM}/${ddMMMyyyy}.xml`;
+      const url = `https://www.tcmb.gov.tr/kurlar/${yyyyMM}/${ddMMMyyyy}.xml`;
 
       try {
         const currencies = await fetchRatesFromXML(url);
@@ -108,24 +139,19 @@ app.get("/history", async (req, res) => {
 
         if (baseRate == null || targetRate == null) continue;
 
-       
-        let rate;
-        if (range === "1D") {
-          rate = parseFloat((targetRate / baseRate).toFixed(4));
-        } else {
-          rate = parseFloat((targetRate / baseRate).toFixed(4));
-        }
-
-        history.push({ date: date.toISOString(), rate });
+        history.push({
+          date: date.toISOString(),
+          rate: parseFloat((targetRate / baseRate).toFixed(4)),
+        });
       } catch {
         continue;
       }
     }
 
-    res.json(history);
+    return res.json(history);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Geçmiş veriler alınamadı" });
+    return res.status(500).json({ error: "Geçmiş veriler alınamadı." });
   }
 });
 
