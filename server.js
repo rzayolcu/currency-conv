@@ -17,7 +17,8 @@ app.use(cors());
 const PORT = process.env.PORT || 3000;
 
 // Frontend dosyalarını servis et
-app.use(express.static(path.join(__dirname, "public")));
+
+app.use("/data", express.static(path.join(__dirname, "data")));
 
 const TCMB_TODAY = "https://www.tcmb.gov.tr/kurlar/today.xml";
 
