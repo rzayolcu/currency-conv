@@ -64,6 +64,7 @@ app.get("/rates", async (req, res) => {
 app.get("/history", async (req, res) => {
   const { baseCurrency = "TRY", targetCurrency = "USD", range = "1D" } = req.query;
 
+  // Base ve target aynı ise
   if (baseCurrency === targetCurrency) {
     const now = new Date();
     const history = [];
@@ -107,10 +108,10 @@ app.get("/history", async (req, res) => {
 
         if (baseRate == null || targetRate == null) continue;
 
+        // 1D için güncel kuru 24 saat için çoğalt
         let rate;
         if (range === "1D") {
-          const fluctuation = (Math.random() - 0.5) * 0.02;
-          rate = parseFloat(((targetRate / baseRate) * (1 + fluctuation)).toFixed(4));
+          rate = parseFloat((targetRate / baseRate).toFixed(4));
         } else {
           rate = parseFloat((targetRate / baseRate).toFixed(4));
         }
@@ -127,6 +128,7 @@ app.get("/history", async (req, res) => {
     res.status(500).json({ error: "Geçmiş veriler alınamadı" });
   }
 });
+
 
 // Frontend
 app.use(express.static(path.join(__dirname, "public")));
