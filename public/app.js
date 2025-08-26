@@ -65,22 +65,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   convertBtn.addEventListener("click", convert);
 
   // Backend’den geçmiş kurları çek
-  async function fetchCurrencyHistory(baseCurrency, targetCurrency, range) {
-    try {
-      const res = await fetch(
-        `/history?baseCurrency=${baseCurrency}&targetCurrency=${targetCurrency}&range=${range}`
-      );
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Geçmiş veri alınamadı");
-      }
-      const data = await res.json();
-      return data;
-    } catch (err) {
-      console.error(err);
-      return [];
+  const historyCache = {}; // sayfanın üstünde, DOMContentLoaded dışında
+
+async function fetchCurrencyHistory(baseCurrency, targetCurrency, range) {
+  const key = `${baseCurrency}_${targetCurrency}_${range}`;
+  if (historyCache[key]) return historyCache[key];
+
+  try {
+    const res = await fetch(
+      `/history?baseCurrency=${baseCurrency}&targetCurrency=${targetCurrency}&range=${range}`
+    );
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || "Geçmiş veri alınamadı");
     }
+    const data = await res.json();
+    historyCache[key] = data; // cache’e ekle
+    return data;
+  } catch (err) {
+    console.error(err);
+    return [];
   }
+}
+
 
   // Grafik oluştur
   function createChart(fromCurrency, toCurrency, ratesHistory, range) {
@@ -156,7 +163,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           decimation: {
             enabled: true,
             algorithm: "lttb",
-            samples: 50,
+            samples: 100,
           },
         },
         scales: {
