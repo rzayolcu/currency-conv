@@ -1,3 +1,4 @@
+const historyCache = {}; 
 document.addEventListener("DOMContentLoaded", async () => {
   // Elementler
   const amountEl = document.getElementById("amount");
@@ -65,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   convertBtn.addEventListener("click", convert);
 
   // Backend’den geçmiş kurları çek
-  const historyCache = {}; // sayfanın üstünde, DOMContentLoaded dışında
+  
 
 async function fetchCurrencyHistory(baseCurrency, targetCurrency, range) {
   const key = `${baseCurrency}_${targetCurrency}_${range}`;
