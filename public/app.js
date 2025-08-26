@@ -1,4 +1,4 @@
-const historyCache = {};
+
 document.addEventListener("DOMContentLoaded", async () => {
   // Elementler
   const amountEl = document.getElementById("amount");
@@ -65,35 +65,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   convertBtn.addEventListener("click", convert);
 
-  // Kur_2025.json’dan geçmiş kurları çek
+  
   async function fetchCurrencyHistory(baseCurrency, targetCurrency, range) {
-    const key = `${baseCurrency}_${targetCurrency}_${range}`;
-    if (historyCache[key]) return historyCache[key];
-
-    try {
-      const res = await fetch("/data/kur_2025.json"); // JSON dosyası direkt
-      if (!res.ok) throw new Error("Geçmiş veri alınamadı");
-      const data = await res.json();
-
-      // Base ve target oranları hesapla
-      const history = data.map((item) => {
-        const baseRate = item.rates[baseCurrency] || 1;
-        const targetRate = item.rates[targetCurrency] || 1;
-        return {
-          date: item.date,
-          rate: parseFloat((targetRate / baseRate).toFixed(4)),
-        };
-      });
-
-      historyCache[key] = history; // cache’e ekle
-      return history;
-    } catch (err) {
-      console.error(err);
-      return [];
-    }
+  try {
+    const res = await fetch(`/history?baseCurrency=${baseCurrency}&targetCurrency=${targetCurrency}&range=${range}`);
+    if (!res.ok) throw new Error("Geçmiş veri alınamadı");
+    const data = await res.json();
+    return data.map((item) => ({
+      date: item.date,
+      rate: item.rate,
+    }));
+  } catch (err) {
+    console.error(err);
+    return [];
   }
+}
 
-  // Grafik oluşturma fonksiyonu (değişmedi)
+  // Grafik oluşturma fonksiyonu 
   function createChart(fromCurrency, toCurrency, ratesHistory, range) {
     if (fromCurrency === toCurrency) {
       ratesHistory = ratesHistory.map((item) => ({ date: item.date, rate: 1 }));
