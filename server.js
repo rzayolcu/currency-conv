@@ -4,6 +4,8 @@ import cors from "cors";
 import { parseStringPromise } from "xml2js";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";             // <-- bunu ekle
+import cron from "node-cron";
 
 // ES Module __dirname ayarı
 const __filename = fileURLToPath(import.meta.url);
@@ -18,6 +20,11 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, "public")));
 
 const TCMB_TODAY = "https://www.tcmb.gov.tr/kurlar/today.xml";
+
+const DATA_DIR = path.join(__dirname, "data");
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR);
+}
 
 // Yardımcı fonksiyonlar
 function formatDate(date) {
@@ -48,7 +55,77 @@ function getRateFromCurrencies(currencies, code) {
   return parseFloat(rateStr.replace(",", "."));
 }
 
-// API: Güncel kurlar
+async function saveDailyRates() {
+  const today = new Date();
+  const { yyyyMM, ddMMMyyyy } = formatDate(today);
+  const url = `https://www.tcmb.gov.tr/kurlar/${yyyyMM}/${ddMMMyyyy}.xml`;
+
+  try {
+    const currencies = await fetchRatesFromXML(url);
+    const rates = { TRY: 1 };
+
+    for (const cur of currencies) {
+      const code = cur.$.CurrencyCode;
+      const rateStr = cur.ForexSelling?.[0] || cur.BanknoteSelling?.[0];
+      if (!rateStr) continue;
+      rates[code] = parseFloat(rateStr.replace(",", "."));
+    }
+
+    const year = today.getFullYear();
+    const filePath = path.join(DATA_DIR, `kur_${year}.json`);
+    let history = [];
+
+    if (fs.existsSync(filePath)) {
+      history = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    }
+
+    history.push({ date: today.toISOString(), rates });
+    fs.writeFileSync(filePath, JSON.stringify(history, null, 2));
+
+    console.log("✅ Günlük veriler kaydedildi:", filePath);
+  } catch (err) {
+    console.error("❌ Günlük veri alınamadı:", err.message);
+  }
+}
+
+
+// Son 1 yılın tüm verisini çek ve kaydet
+app.get("/init-year", async (req, res) => {
+  const today = new Date();
+  const history = [];
+
+  for (let i = 0; i < 365; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    const { yyyyMM, ddMMMyyyy } = formatDate(date);
+    const url = `https://www.tcmb.gov.tr/kurlar/${yyyyMM}/${ddMMMyyyy}.xml`;
+
+    try {
+      const currencies = await fetchRatesFromXML(url);
+      const rates = { TRY: 1 };
+
+      for (const cur of currencies) {
+        const code = cur.$.CurrencyCode;
+        const rateStr = cur.ForexSelling?.[0] || cur.BanknoteSelling?.[0];
+        if (!rateStr) continue;
+        rates[code] = parseFloat(rateStr.replace(",", "."));
+      }
+
+      history.push({ date: date.toISOString(), rates });
+    } catch {
+      continue; // veri yoksa atla
+    }
+  }
+
+  const year = today.getFullYear();
+  const filePath = path.join(DATA_DIR, `kur_${year}.json`);
+  fs.writeFileSync(filePath, JSON.stringify(history.reverse(), null, 2));
+
+  res.json({ message: "Son 1 yıl verisi kaydedildi.", file: filePath });
+});
+
+
+// Güncel kurlar
 app.get("/rates", async (req, res) => {
   try {
     const currencies = await fetchRatesFromXML(TCMB_TODAY);
@@ -67,7 +144,7 @@ app.get("/rates", async (req, res) => {
   }
 });
 
-// API: Tarihsel kurlar
+// Tarihsel kurlar
 app.get("/history", async (req, res) => {
   const {
     baseCurrency = "TRY",
@@ -165,9 +242,13 @@ app.get("/history", async (req, res) => {
   }
 });
 
-// Tüm diğer route’lar frontend’e yönlendir (path-to-regexp hatasını engeller)
+// Tüm diğer route’lar frontend’e yönlendir 
 app.get(/^\/(?!rates|history).*$/, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+cron.schedule("0 16 * * *", () => {
+  saveDailyRates();
 });
 
 // Server başlat
