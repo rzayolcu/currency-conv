@@ -83,24 +83,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Grafik oluşturma fonksiyonu 
   function createChart(fromCurrency, toCurrency, ratesHistory, range) {
-    if (fromCurrency === toCurrency) {
-      ratesHistory = ratesHistory.map((item) => ({ date: item.date, rate: 1 }));
-    }
+  if (fromCurrency === toCurrency) {
+    ratesHistory = ratesHistory.map((item) => ({ date: item.date, rate: 1 }));
+  }
 
-    const labels = ratesHistory.map((item) => {
-      const d = new Date(item.date);
-      switch (range) {
-        case "1D":
-          return `${d.getHours()}:00`;
-        case "1W":
-        case "1M":
-          return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
-        case "1Y":
-          return d.toLocaleDateString("tr-TR", { month: "short", year: "numeric" });
-        default:
-          return d.toLocaleDateString();
+  const labels = ratesHistory.map((item) => {
+    const d = new Date(item.date);
+    switch (range) {
+      case "1D": {
+        const hours = d.getHours().toString().padStart(2, "0");
+        const minutes = d.getMinutes().toString().padStart(2, "0");
+        return `${hours}:${minutes}`; // Saat:dk formatı
       }
-    });
+      case "1W":
+      case "1M":
+        return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
+      case "1Y":
+        return d.toLocaleDateString("tr-TR", { month: "short", year: "numeric" });
+      default:
+        return d.toLocaleDateString();
+    }
+  });
 
     const data = ratesHistory.map((item) => item.rate);
 

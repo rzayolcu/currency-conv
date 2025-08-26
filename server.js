@@ -108,7 +108,7 @@ app.get("/history", async (req, res) => {
 
         if (baseRate == null || targetRate == null) continue;
 
-        // 1D için güncel kuru 24 saat için çoğalt
+       
         let rate;
         if (range === "1D") {
           rate = parseFloat((targetRate / baseRate).toFixed(4));
