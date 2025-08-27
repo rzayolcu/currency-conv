@@ -198,36 +198,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     })
   );
 
-  async function loadDailyConversions() {
-  try {
-    const res = await fetch("/daily-conversion");
-    const data = await res.json();
-
-    const usdTbody = document.querySelector("#usdToTryTable tbody");
-    const eurTbody = document.querySelector("#eurToTryTable tbody");
-
-    usdTbody.innerHTML = "";
-    eurTbody.innerHTML = "";
-
-    data.usdConversions.forEach((row) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${row.amount.toLocaleString()} USD</td><td>${row.converted.toLocaleString(undefined, {minimumFractionDigits: 4})} TRY</td>`;
-      usdTbody.appendChild(tr);
-    });
-
-    data.eurConversions.forEach((row) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${row.amount.toLocaleString()} EUR</td><td>${row.converted.toLocaleString(undefined, {minimumFractionDigits: 4})} TRY</td>`;
-      eurTbody.appendChild(tr);
-    });
-  } catch (err) {
-    console.error("Dönüşüm verisi alınamadı", err);
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  loadDailyConversions();
-});
+  
   await fetchRates();
 
   const initialFrom = fromCurrencyEl.value;

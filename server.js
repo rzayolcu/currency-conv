@@ -160,36 +160,7 @@ app.get("/history", async (req, res) => {
   }
 });
 
-  app.get("/daily-conversion", async (req, res) => {
-  try {
-    const currencies = await fetchRatesFromXML(TCMB_TODAY);
 
-    const usd = getRateFromCurrencies(currencies, "USD");
-    const eur = getRateFromCurrencies(currencies, "EUR");
-
-    if (!usd || !eur) return res.status(500).json({ error: "Kur alınamadı" });
-
-    const amounts = [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000];
-
-    const usdConversions = amounts.map((amount) => ({
-      amount,
-      converted: parseFloat((amount * usd).toFixed(4)), // USD ➜ TRY
-    }));
-
-    const eurConversions = amounts.map((amount) => ({
-      amount,
-      converted: parseFloat((amount * eur).toFixed(4)), // EUR ➜ TRY
-    }));
-
-    return res.json({
-      usdConversions,
-      eurConversions,
-    });
-  } catch (err) {
-    console.error("Dönüşüm hatası:", err);
-    return res.status(500).json({ error: "Dönüşüm verisi alınamadı." });
-  }
-});
 
 // Frontend
 app.use(express.static(path.join(__dirname, "public")));

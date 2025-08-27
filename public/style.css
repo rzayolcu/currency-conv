@@ -166,29 +166,4 @@ select {
   color: #fff;
 }
 
-.conversion-tables {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  margin-top: 20px;
-}
 
-.conversion-table table {
-  border-collapse: collapse;
-  width: 220px;
-  background: #f9f9f9;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.conversion-table th,
-.conversion-table td {
-  padding: 10px 15px;
-  border-bottom: 1px solid #ddd;
-  text-align: right;
-}
-
-.conversion-table th {
-  background-color: #ececec;
-  text-align: center;
-}
