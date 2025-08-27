@@ -25,6 +25,7 @@ function formatDate(date) {
   };
 }
 
+// Verilen URL'den TCMB XML verisini çeker ve döviz kurlarını JSON formatında döndürür
 async function fetchRatesFromXML(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error("XML fetch error");
@@ -33,6 +34,7 @@ async function fetchRatesFromXML(url) {
   return parsed.Tarih_Date.Currency;
 }
 
+// Verilen para birimi koduna göre TCMB verilerinden satış kurunu döndürür (TRY için 1 döner)
 function getRateFromCurrencies(currencies, code) {
   if (code === "TRY") return 1;
   const cur = currencies.find((c) => c.$.CurrencyCode === code);

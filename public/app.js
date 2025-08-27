@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let rates = { TRY: 1 };
   let currencyChart;
 
+  // Sunucudan döviz kurlarını çeker, `rates` objesine kaydeder ve dönüşüm butonunu aktif eder
   async function fetchRates() {
     try {
       const res = await fetch("/rates");
@@ -28,6 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+ // Kullanıcının girdiği miktarı seçilen döviz kurlarına göre dönüştürür ve sonucu gösterir
   function convert() {
     const amount = parseFloat(amountEl.value);
     if (isNaN(amount) || amount === 0) return;
@@ -43,6 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     oneUnitContainer.innerText = `1 ${from} = ${rateInfo} ${to}`;
   }
 
+  // Döviz dönüşümde "from" ve "to" para birimlerini takas eder, geçmiş döviz kuru verilerini yeniden yükler ve grafik ile sonucu günceller
   swapBtn.addEventListener("click", async () => {
     [fromCurrencyEl.value, toCurrencyEl.value] = [
       toCurrencyEl.value,
@@ -65,6 +68,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   convertBtn.addEventListener("click", convert);
 
+  // Belirtilen para birimleri ve zaman aralığı için geçmiş döviz kuru verilerini çeker ve tarih ile kuru döner
   async function fetchCurrencyHistory(baseCurrency, targetCurrency, range) {
     try {
       const res = await fetch(
@@ -79,6 +83,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // Verilen döviz kuru geçmişi verisiyle, seçilen para birimleri ve zaman aralığına göre çizgi grafik oluşturur veya günceller
   function createChart(fromCurrency, toCurrency, ratesHistory, range) {
     if (fromCurrency === toCurrency) {
       ratesHistory = ratesHistory.map((item) => ({ date: item.date, rate: 1 }));
