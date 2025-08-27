@@ -44,29 +44,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   swapBtn.addEventListener("click", async () => {
-  [fromCurrencyEl.value, toCurrencyEl.value] = [
-    toCurrencyEl.value,
-    fromCurrencyEl.value,
-  ];
+    [fromCurrencyEl.value, toCurrencyEl.value] = [
+      toCurrencyEl.value,
+      fromCurrencyEl.value,
+    ];
 
-  const range =
-    document.querySelector(".time-range-controls .active")?.dataset.range || "1W";
-  const fromCurrency = fromCurrencyEl.value;
-  const toCurrency = toCurrencyEl.value;
+    const range =
+      document.querySelector(".time-range-controls .active")?.dataset.range ||
+      "1W";
+    const fromCurrency = fromCurrencyEl.value;
+    const toCurrency = toCurrencyEl.value;
 
-  chartTitle.textContent = "Grafik yükleniyor...";
-  const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
-  createChart(toCurrency, fromCurrency, history, range);
-  chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
+    chartTitle.textContent = "Grafik yükleniyor...";
+    const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
+    createChart(toCurrency, fromCurrency, history, range);
+    chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
 
-  convert();
-});
+    convert();
+  });
 
   convertBtn.addEventListener("click", convert);
 
   async function fetchCurrencyHistory(baseCurrency, targetCurrency, range) {
     try {
-      const res = await fetch(`/history?baseCurrency=${baseCurrency}&targetCurrency=${targetCurrency}&range=${range}`);
+      const res = await fetch(
+        `/history?baseCurrency=${baseCurrency}&targetCurrency=${targetCurrency}&range=${range}`
+      );
       if (!res.ok) throw new Error("Geçmiş veri alınamadı");
       const data = await res.json();
       return data.map((item) => ({ date: item.date, rate: item.rate }));
@@ -85,12 +88,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       const d = new Date(item.date);
       switch (range) {
         case "1D":
-          return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+          return `${d.getHours().toString().padStart(2, "0")}:${d
+            .getMinutes()
+            .toString()
+            .padStart(2, "0")}`;
         case "1W":
         case "1M":
-          return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
+          return d.toLocaleDateString("tr-TR", {
+            day: "2-digit",
+            month: "short",
+          });
         case "1Y":
-          return d.toLocaleDateString("tr-TR", { month: "short", year: "numeric" });
+          return d.toLocaleDateString("tr-TR", {
+            month: "short",
+            year: "numeric",
+          });
         default:
           return d.toLocaleDateString();
       }
@@ -103,15 +115,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       type: "line",
       data: {
         labels,
-        datasets: [{
-          label: `${toCurrency} / ${fromCurrency}`,
-          data,
-          borderColor: "rgba(75,192,192,1)",
-          backgroundColor: "rgba(75,192,192,0.2)",
-          tension: 0.3,
-          pointRadius: 0,
-          pointHoverRadius: 0,
-        }],
+        datasets: [
+          {
+            label: `${toCurrency} / ${fromCurrency}`,
+            data,
+            borderColor: "rgba(75,192,192,1)",
+            backgroundColor: "rgba(75,192,192,0.2)",
+            tension: 0.3,
+            pointRadius: 0,
+            pointHoverRadius: 0,
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -123,7 +137,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             mode: "index",
             intersect: false,
             callbacks: {
-              label: (context) => `${context.dataset.label}: ${parseFloat(context.raw).toFixed(4)}`,
+              label: (context) =>
+                `${context.dataset.label}: ${parseFloat(context.raw).toFixed(
+                  4
+                )}`,
             },
           },
           decimation: { enabled: true, algorithm: "lttb", samples: 100 },
@@ -141,47 +158,90 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   timeButtons.forEach((btn) => {
-  btn.addEventListener("click", async () => {
-    document
-      .querySelector(".time-range-controls .active")
-      ?.classList.remove("active");
-    btn.classList.add("active");
+    btn.addEventListener("click", async () => {
+      document
+        .querySelector(".time-range-controls .active")
+        ?.classList.remove("active");
+      btn.classList.add("active");
 
-    const range = btn.dataset.range;
-    const fromCurrency = fromCurrencyEl.value;
-    const toCurrency = toCurrencyEl.value;
+      const range = btn.dataset.range;
+      const fromCurrency = fromCurrencyEl.value;
+      const toCurrency = toCurrencyEl.value;
 
-    chartTitle.textContent = "Grafik yükleniyor...";
-    const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
-    createChart(toCurrency, fromCurrency, history, range);
-    chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
+      chartTitle.textContent = "Grafik yükleniyor...";
+      const history = await fetchCurrencyHistory(
+        toCurrency,
+        fromCurrency,
+        range
+      );
+      createChart(toCurrency, fromCurrency, history, range);
+      chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
+    });
   });
-});
 
   [toCurrencyEl, fromCurrencyEl].forEach((el) =>
-  el.addEventListener("change", async () => {
-    const range =
-      document.querySelector(".time-range-controls .active")?.dataset.range || "1Y";
-    const fromCurrency = fromCurrencyEl.value;
-    const toCurrency = toCurrencyEl.value;
+    el.addEventListener("change", async () => {
+      const range =
+        document.querySelector(".time-range-controls .active")?.dataset.range ||
+        "1Y";
+      const fromCurrency = fromCurrencyEl.value;
+      const toCurrency = toCurrencyEl.value;
 
-    chartTitle.textContent = "Grafik yükleniyor...";
-    const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
-    createChart(toCurrency, fromCurrency, history, range);
-    chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
-  })
-);
+      chartTitle.textContent = "Grafik yükleniyor...";
+      const history = await fetchCurrencyHistory(
+        toCurrency,
+        fromCurrency,
+        range
+      );
+      createChart(toCurrency, fromCurrency, history, range);
+      chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
+    })
+  );
 
+  async function loadDailyConversions() {
+  try {
+    const res = await fetch("/daily-conversion");
+    const data = await res.json();
 
+    const usdTbody = document.querySelector("#usdToTryTable tbody");
+    const eurTbody = document.querySelector("#eurToTryTable tbody");
+
+    usdTbody.innerHTML = "";
+    eurTbody.innerHTML = "";
+
+    data.usdConversions.forEach((row) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${row.amount.toLocaleString()} USD</td><td>${row.converted.toLocaleString(undefined, {minimumFractionDigits: 4})} TRY</td>`;
+      usdTbody.appendChild(tr);
+    });
+
+    data.eurConversions.forEach((row) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${row.amount.toLocaleString()} EUR</td><td>${row.converted.toLocaleString(undefined, {minimumFractionDigits: 4})} TRY</td>`;
+      eurTbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error("Dönüşüm verisi alınamadı", err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadDailyConversions();
+});
   await fetchRates();
 
-const initialFrom = fromCurrencyEl.value;
-const initialTo = toCurrencyEl.value;
-const initialRange =
-  document.querySelector(".time-range-controls .active")?.dataset.range || "1W";
+  const initialFrom = fromCurrencyEl.value;
+  const initialTo = toCurrencyEl.value;
+  const initialRange =
+    document.querySelector(".time-range-controls .active")?.dataset.range ||
+    "1W";
 
-chartTitle.textContent = "Grafik yükleniyor...";
-const initialHistory = await fetchCurrencyHistory(initialFrom, initialTo, initialRange);
-createChart(initialFrom, initialTo, initialHistory, initialRange);
-chartTitle.textContent = `${initialFrom} / ${initialTo} Grafiği (${initialRange})`;
+  chartTitle.textContent = "Grafik yükleniyor...";
+  const initialHistory = await fetchCurrencyHistory(
+    initialFrom,
+    initialTo,
+    initialRange
+  );
+  createChart(initialFrom, initialTo, initialHistory, initialRange);
+  chartTitle.textContent = `${initialFrom} / ${initialTo} Grafiği (${initialRange})`;
 });
