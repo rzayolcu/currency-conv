@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const swapBtn = document.getElementById("swapBtn");
   const convertBtn = document.getElementById("convertBtn");
   const chartTitle = document.getElementById("chart-title");
-  const chartLoadingEl = document.getElementById("chart-loading"); // <-- EKLENDİ
   const timeButtons = document.querySelectorAll(".time-range-controls button");
   const ctx = document.getElementById("currencyChart").getContext("2d");
   const oneUnitContainer = document.getElementById("oneUnitContainer");
@@ -45,24 +44,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   swapBtn.addEventListener("click", async () => {
-    [fromCurrencyEl.value, toCurrencyEl.value] = [
-      toCurrencyEl.value,
-      fromCurrencyEl.value,
-    ];
-    const range =
-      document.querySelector(".time-range-controls .active")?.dataset.range || "1W";
-    const fromCurrency = fromCurrencyEl.value;
-    const toCurrency = toCurrencyEl.value;
+  [fromCurrencyEl.value, toCurrencyEl.value] = [
+    toCurrencyEl.value,
+    fromCurrencyEl.value,
+  ];
 
-    chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
+  const range =
+    document.querySelector(".time-range-controls .active")?.dataset.range || "1W";
+  const fromCurrency = fromCurrencyEl.value;
+  const toCurrency = toCurrencyEl.value;
 
-    chartLoadingEl.style.display = "block"; // <-- göster
-    const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
-    createChart(toCurrency, fromCurrency, history, range);
-    chartLoadingEl.style.display = "none"; // <-- gizle
+  chartTitle.textContent = "Grafik yükleniyor...";
+  const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
+  createChart(toCurrency, fromCurrency, history, range);
+  chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
 
-    convert();
-  });
+  convert();
+});
 
   convertBtn.addEventListener("click", convert);
 
@@ -143,46 +141,47 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   timeButtons.forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      document.querySelector(".time-range-controls .active")?.classList.remove("active");
-      btn.classList.add("active");
+  btn.addEventListener("click", async () => {
+    document
+      .querySelector(".time-range-controls .active")
+      ?.classList.remove("active");
+    btn.classList.add("active");
 
-      const range = btn.dataset.range;
-      const fromCurrency = fromCurrencyEl.value;
-      const toCurrency = toCurrencyEl.value;
-      chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
+    const range = btn.dataset.range;
+    const fromCurrency = fromCurrencyEl.value;
+    const toCurrency = toCurrencyEl.value;
 
-      chartLoadingEl.style.display = "block"; // <-- göster
-      const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
-      createChart(toCurrency, fromCurrency, history, range);
-      chartLoadingEl.style.display = "none"; // <-- gizle
-    });
+    chartTitle.textContent = "Grafik yükleniyor...";
+    const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
+    createChart(toCurrency, fromCurrency, history, range);
+    chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
   });
+});
 
   [toCurrencyEl, fromCurrencyEl].forEach((el) =>
-    el.addEventListener("change", async () => {
-      const range = document.querySelector(".time-range-controls .active")?.dataset.range || "1Y";
-      const fromCurrency = fromCurrencyEl.value;
-      const toCurrency = toCurrencyEl.value;
-      chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
+  el.addEventListener("change", async () => {
+    const range =
+      document.querySelector(".time-range-controls .active")?.dataset.range || "1Y";
+    const fromCurrency = fromCurrencyEl.value;
+    const toCurrency = toCurrencyEl.value;
 
-      chartLoadingEl.style.display = "block"; // <-- göster
-      const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
-      createChart(toCurrency, fromCurrency, history, range);
-      chartLoadingEl.style.display = "none"; // <-- gizle
-    })
-  );
+    chartTitle.textContent = "Grafik yükleniyor...";
+    const history = await fetchCurrencyHistory(toCurrency, fromCurrency, range);
+    createChart(toCurrency, fromCurrency, history, range);
+    chartTitle.textContent = `${fromCurrency} / ${toCurrency} Grafiği (${range})`;
+  })
+);
+
 
   await fetchRates();
 
-  const initialFrom = fromCurrencyEl.value;
-  const initialTo = toCurrencyEl.value;
-  const initialRange = document.querySelector(".time-range-controls .active")?.dataset.range || "1W";
+const initialFrom = fromCurrencyEl.value;
+const initialTo = toCurrencyEl.value;
+const initialRange =
+  document.querySelector(".time-range-controls .active")?.dataset.range || "1W";
 
-  chartTitle.textContent = `${initialFrom} / ${initialTo} Grafiği (${initialRange})`;
-
-  chartLoadingEl.style.display = "block"; // <-- göster
-  const initialHistory = await fetchCurrencyHistory(initialFrom, initialTo, initialRange);
-  createChart(initialFrom, initialTo, initialHistory, initialRange);
-  chartLoadingEl.style.display = "none"; // <-- gizle
+chartTitle.textContent = "Grafik yükleniyor...";
+const initialHistory = await fetchCurrencyHistory(initialFrom, initialTo, initialRange);
+createChart(initialFrom, initialTo, initialHistory, initialRange);
+chartTitle.textContent = `${initialFrom} / ${initialTo} Grafiği (${initialRange})`;
 });
